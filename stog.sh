@@ -7,8 +7,8 @@ GIT_USER_EMAIL=$(git config --global user.email)
 git config --global user.name "bot"
 git config --global user.email bot@sib-soft.ru
 
-SVN_PATH=c:/SVN/
-GIT_PATH=c:/sib-soft/hcs-sibir/
+SVN_PATH=d:/repos/svn/trunk/
+GIT_PATH=d:/repos/git/
 
 #Разбираем переданные аргументы скрипта в  переменные
 
@@ -51,34 +51,78 @@ cd $CUR_PATH
 TMP_BRANCH_GIT="FROM_SVN"
 
 #Путь к файлу с игнорами
-DIFF_IGNORE=$CUR_PATH'ignore'
+#DIFF_IGNORE=$CUR_PATH'ignore'
+
+
+#Проверка каталогов
+
+if [ ! -d "$SVN_PATH" ]; then
+echo "Каталог к репозиторию SVN указан не верно"
+exit 1
+else
 
 cd $SVN_PATH
-#svn cleanup --remove-unversioned
-SVN_BRANCH=$(basename $(svn info --show-item url))
+
+svn info
+if [ $? = "0" ]; then
+#SVN_URL=$(svn info --show-item url)
+#SVN_BRANCH=$(basename $SVN_URL)
+#SVN_BRANCH=$(echo "${SVN_BRANCH^^}")
+#SVN_REV=$(svn info --show-item last-changed-revision)
+
+SVN_URL=$(svn info | grep -ioP '(?<=^url:).*$' | sed 's/\s*//g')
+SVN_BRANCH=$(svn info | grep -ioP '(?<=^relative url:).*$' | sed 's/\s*//g' | sed 's/^\^\///g')
 SVN_BRANCH=$(echo "${SVN_BRANCH^^}")
-SVN_REV=$(svn info --show-item last-changed-revision)
-echo $SVN_REV
+SVN_REV=$(svn info | grep -ioP '(?<=^last changed rev:).*$' | sed 's/\s*//g')
+
+else
+echo 'Каталог "'$SVN_PATH'" не под контролем SVN'
 cd $CUR_PATH
+exit 1
+fi
+
+fi
 
 
-
-
-#Если каталог не существует, то выйдем с ошибкой
 if [ ! -d "$GIT_PATH" ]; then
-echo "Каталог к репозиторию указан не верно"
-#if [ -n $(echo "$GIT_PATH"| grep -oiP '\/[^\/]*') ]; then
-#mkdir $GIT_PATH
-#fi
+echo "Каталог к репозиторию GIT указан не верно"
 exit 1
 else
 cd $GIT_PATH
-if [ ! -d "$(pwd)/.git" ]; then
-echo "Каталог не под контролем GIT"
+git status
+if [ $? != "0" ]; then
+echo 'Каталог "'$GIT_PATH'" не под контролем GIT'
 cd $CUR_PATH
 exit 1
 fi
+
 fi
+
+#Проверим gradle, иначе смысла во всех манпипуляциях нет, если в конце всё свалится
+cd $GIT_PATH
+if [[ -f gradlew && -d gradle ]]; then
+ chmod +x gradlew && ./gradlew tasks || (echo -e '\nПроблемы со сборщиком gradle!!!' && exit 1)
+else
+  BEFORE_PATH=$PATH
+  #Если создание враппера не выполненно, то нужно скачать дистрибутив и установить его в CUR_PATH
+  gradle wrapper || ( [ -f $CUR_PATH'gradle.zip' ] || ( curl -GL -o $CUR_PATH'gradle.zip' https://services.gradle.org/distributions/gradle-2.7-bin.zip  && unzip -o $CUR_PATH'gradle.zip' -d $CUR_PATH'gradle') ) && chmod +x $(find  $CUR_PATH'gradle' -type f -ipath '*/bin/gradle')  && PATH=$PATH':'$(dirname $(find  /d/repos/scripts/gradle  -type f -ipath '*/bin/gradle'))
+  
+  echo $PATH
+  #Проверяем враппер после установки
+  gradle wrapper
+  if [ $? != "0" ]; then
+	echo -e '\nПроблемы со сборщиком gradle, наверно он не установлен (установить: sudo apt-get install gradle)!!!'	
+	exit 1
+  else
+    #Вернем все как было до установки gradle
+    PATH=$BEFORE_PATH
+	rm -f $CUR_PATH'gradle.zip'
+	rm -fR $CUR_PATH'gradle/'
+  fi
+fi 
+cd $CUR_PATH
+
+exit 0
 
 #Стянем изменения в локальную ветку
 #git fetch
@@ -111,20 +155,20 @@ echo $HASH_LAST_REVISION
 echo $LAST_REVISION
 
 
-rm -f $DIFF_IGNORE
+#rm -f $DIFF_IGNORE
 
-echo $DIFF_IGNORE
-
-
-(echo "gradle" && echo "out" && echo ".idea" && echo ".gradle" && echo ".svn" && echo ".git") > $DIFF_IGNORE
-cat $GIT_PATH'.gitignore' >> $DIFF_IGNORE
+#echo $DIFF_IGNORE
 
 
-cd $SVN_PATH
-svn propget svn:ignore >> $DIFF_IGNORE
+#(echo "gradle" && echo "out" && echo ".idea" && echo ".gradle" && echo ".svn" && echo ".git") > $DIFF_IGNORE
+#cat $GIT_PATH'.gitignore' >> $DIFF_IGNORE
+
+
+#cd $SVN_PATH
+#svn propget svn:ignore >> $DIFF_IGNORE
 #svn cleanup --remove-unversioned
 #svn status|grep -iP '^[\?|\!]'
-cd $CUR_PATH
+#cd $CUR_PATH
 
 
 cd $GIT_PATH

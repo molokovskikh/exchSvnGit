@@ -50,11 +50,19 @@ DIFF_IGNORE=$CUR_PATH'ignore'
 #else
 
 #cd $SVN_PATH
-#svn info --show-item url
+
+#svn info
 #if [ $? = "0" ]; then
-#SVN_BRANCH=$(basename $(svn info --show-item url))
+##SVN_URL=$(svn info --show-item url)
+##SVN_BRANCH=$(basename $SVN_URL)
+##SVN_BRANCH=$(echo "${SVN_BRANCH^^}")
+##SVN_REV=$(svn info --show-item last-changed-revision)
+
+#SVN_URL=$(svn info | grep -ioP '(?<=^url:).*$' | sed 's/\s*//g')
+#SVN_BRANCH=$(svn info | grep -ioP '(?<=^relative url:).*$' | sed 's/\s*//g' | sed 's/^\^\///g')
 #SVN_BRANCH=$(echo "${SVN_BRANCH^^}")
-#SVN_REV=$(svn info --show-item last-changed-revision)
+#SVN_REV=$(svn info | grep -ioP '(?<=^last changed rev:).*$' | sed 's/\s*//g')
+
 #else
 #echo 'Каталог "'$SVN_PATH'" не под контролем SVN'
 #cd $CUR_PATH
@@ -148,4 +156,4 @@ eval "find "$SVN_PATH" -type f -not \( "$TEMPLATE_FIND" \)" | sed s/$(echo $SVN_
 #cd $CUR_PATH
 
 
-diff -arwEBNdu --ignore-file-name-case --exclude-from=$DIFF_IGNORE $GIT_PATH $SVN_PATH > $PATCH_FILE
+#diff -arwEBNdu --ignore-file-name-case --exclude-from=$DIFF_IGNORE $GIT_PATH $SVN_PATH > $PATCH_FILE
