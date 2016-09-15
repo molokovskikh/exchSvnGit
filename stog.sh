@@ -108,7 +108,7 @@ else
   GRADLE_BIN_ZIP='gradle-'$GRADLE_VERSION'-bin.zip'
   
   #Если создание враппера не выполненно, то нужно скачать дистрибутив и установить его в CUR_PATH
-  gradle wrapper || ( [ -f $CUR_PATH$GRADLE_BIN_ZIP ] || ( curl -GL -o $CUR_PATH$GRADLE_BIN_ZIP 'https://services.gradle.org/distributions/'$GRADLE_BIN_ZIP  && unzip -o $CUR_PATH$GRADLE_BIN_ZIP -d $CUR_PATH'gradle' ) ) && chmod +x $(find  $CUR_PATH'gradle' -type f -ipath '*/bin/gradle')  && [ -z $(echo $PATH | grep -ioP "$(dirname $(find $CUR_PATH'gradle'  -type f -ipath '*'$GRADLE_VERSION'*/bin/gradle'))" ) ] && PATH=$PATH':'$(dirname $(find $CUR_PATH'gradle'  -type f -ipath '*'$GRADLE_VERSION'*/bin/gradle')) )
+  gradle wrapper || ( [ -f $CUR_PATH$GRADLE_BIN_ZIP ] || ( curl -GL -o $CUR_PATH$GRADLE_BIN_ZIP 'https://services.gradle.org/distributions/'$GRADLE_BIN_ZIP  && unzip -o $CUR_PATH$GRADLE_BIN_ZIP -d $CUR_PATH'gradle' ) ) && chmod +x $(find  $CUR_PATH'gradle' -type f -ipath '*/bin/gradle')  && [ -z $(echo $PATH | grep -ioP "$(dirname $(find $CUR_PATH'gradle'  -type f -ipath '*'$GRADLE_VERSION'*/bin/gradle'))" ) ] && PATH=$PATH':'$(dirname $(find $CUR_PATH'gradle'  -type f -ipath '*'$GRADLE_VERSION'*/bin/gradle'))
   
   EXIT_CODE_GRADLE_WRAPPER=$?
   GRADLE_CUR_VERSION=$(gradle --version | grep -ioP '(?<=^gradle\s).*$')
