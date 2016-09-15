@@ -1,5 +1,6 @@
 #/bin/bash
 
+
 #Нужны админские права для изменения настроек гита
 git config --system core.longpaths true
 GIT_USER_NAME=$(git config --global user.name)
@@ -101,23 +102,36 @@ fi
 #Проверим gradle, иначе смысла во всех манпипуляциях нет, если в конце всё свалится
 cd $GIT_PATH
 if [[ -f gradlew && -d gradle ]]; then
- chmod +x gradlew && ./gradlew tasks || (echo -e '\nПроблемы со сборщиком gradle!!!' && exit 1)
+ chmod +x gradlew && ./gradlew --version || (echo -e '\nПроблемы со сборщиком gradle!!!' && rm -fR gradle && exit 1)
 else
-  BEFORE_PATH=$PATH
-  #Если создание враппера не выполненно, то нужно скачать дистрибутив и установить его в CUR_PATH
-  gradle wrapper || ( [ -f $CUR_PATH'gradle.zip' ] || ( curl -GL -o $CUR_PATH'gradle.zip' https://services.gradle.org/distributions/gradle-2.7-bin.zip  && unzip -o $CUR_PATH'gradle.zip' -d $CUR_PATH'gradle') ) && chmod +x $(find  $CUR_PATH'gradle' -type f -ipath '*/bin/gradle')  && PATH=$PATH':'$(dirname $(find  /d/repos/scripts/gradle  -type f -ipath '*/bin/gradle'))
+  GRADLE_VERSION='2.8'
+  GRADLE_BIN_ZIP='gradle-'$GRADLE_VERSION'-bin.zip'
   
-  echo $PATH
-  #Проверяем враппер после установки
-  gradle wrapper
-  if [ $? != "0" ]; then
-	echo -e '\nПроблемы со сборщиком gradle, наверно он не установлен (установить: sudo apt-get install gradle)!!!'	
-	exit 1
-  else
-    #Вернем все как было до установки gradle
-    PATH=$BEFORE_PATH
-	rm -f $CUR_PATH'gradle.zip'
-	rm -fR $CUR_PATH'gradle/'
+  #Если создание враппера не выполненно, то нужно скачать дистрибутив и установить его в CUR_PATH
+  gradle wrapper || ( [ -f $CUR_PATH$GRADLE_BIN_ZIP ] || ( curl -GL -o $CUR_PATH$GRADLE_BIN_ZIP 'https://services.gradle.org/distributions/'$GRADLE_BIN_ZIP  && unzip -o $CUR_PATH$GRADLE_BIN_ZIP -d $CUR_PATH'gradle' ) ) && chmod +x $(find  $CUR_PATH'gradle' -type f -ipath '*/bin/gradle')  && [ -z $(echo $PATH | grep -ioP "$(dirname $(find $CUR_PATH'gradle'  -type f -ipath '*'$GRADLE_VERSION'*/bin/gradle'))" ) ] && PATH=$PATH':'$(dirname $(find $CUR_PATH'gradle'  -type f -ipath '*'$GRADLE_VERSION'*/bin/gradle')) )
+  
+  EXIT_CODE_GRADLE_WRAPPER=$?
+  GRADLE_CUR_VERSION=$(gradle --version | grep -ioP '(?<=^gradle\s).*$')
+  #Проверка результата выполнения gradle wrapper
+  if [ [ EXIT_CODE_GRADLE_WRAPPER = "0" ] && [ -n GRADLE_CUR_VERSION ] ]; then
+   echo 'Gradle версии '$GRADLE_CUR_VERSION' уже установлен!'
+  else    
+        #После установки gradle создаем враппер для него в каталоге репозитория
+		
+		echo $PATH
+
+		#Проверяем враппер после установки
+		gradle wrapper --gradle-distribution-url 'file\:///'$CUR_PATH$GRADLE_BIN_ZIP
+		if [ $? != "0" ]; then
+			echo -e '\nПроблемы со сборщиком gradle, наверно он не установлен (установить: sudo apt-get install gradle)!!!'	
+			exit 1
+			else
+			#Вернем все как было до установки gradle    
+			#rm -f $CUR_PATH$GRADLE_BIN_ZIP
+			#rm -fR $CUR_PATH'gradle/'
+			export PATH=$PATH
+		fi
+  
   fi
 fi 
 cd $CUR_PATH
