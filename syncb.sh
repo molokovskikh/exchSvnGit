@@ -90,7 +90,12 @@ GIT_BRANCH=$PREFIX_GIT_BRANCH$SVN_BRANCH
 if [ -z $(git branch -r | grep -iP '^\s*origin\/'$GIT_BRANCH'$' -m1) ]; then
 #Выясним ревизию и ветку от которой был бранч в SVN
 SVN_FORK_REV=$(svn log --stop-on-copy $SVN_URL'branches/'$SVN_BRANCH | tail -n20 | grep -aioP '(?<=^r)\d*' | tail -n1)
-SVN_FORK_BRANCH=$(svn propget svn:mergeinfo $SVN_URL'branches/'$SVN_BRANCH | grep -iP $SVN_FORK_REV | grep -ioP '(?<=\/)[^\:]*' )
+SVN_FORK_BRANCH=$(svn propget svn:mergeinfo $SVN_URL'branches/'$SVN_BRANCH | grep -iP $(expr $SVN_FORK_REV + 1) | grep -ioP '(?<=\/)[^\:]*' )
+
+#svn propget svn:mergeinfo https://vcs.lanit.ru/svn/hcs/branches/7.4.0 | xargs -I STR sh -c 'echo "STR"|grep -ioP "(?<=\:).*"| tr "," "\n" | xargs -I REV sh -c '\''([[ -n $(echo "REV"|grep -ioP '\-') ]] && echo REV ) || ([[  REV > 82069 ]] &&  echo -e "$(echo "STR" | grep -oiP "(?<=\/)[^\:]*"):REV\n")'\'''
+#TODO 
+#[[ -n $(echo "REV"|grep -ioP '\-') ]] && echo REV 
+# сделать разбор диапазона REV1-REV25, е если искомая ревизия в этом диапазоне то вывести ветку и REV для контрольки
 
 echo $GIT_BRANCH' - '$SVN_FORK_REV
 echo $SVN_FORK_BRANCH
