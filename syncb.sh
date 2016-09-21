@@ -84,7 +84,11 @@ cd $GIT_PATH
 #Проверим наличие ветки DEV в гите
 if [ -z "$(git branch|grep -ioP '$GIT_BRANCH_DEV$')" ]; then
  GIT_BRANCH_CURRENT=$(git branch|grep -oiP '(?<=^\*\s)\S+$' -m1)
- git checkout -b DEV $(git rev-list --max-parents=0 HEAD)
+ 
+ #Первый комит в репозитории
+ #git checkout -b DEV $(git rev-list --max-parents=0 HEAD)
+ git checkout -f master && git pull --rebase
+ 
  #Перенесем историю для ветки DEV
  cd $CUR_PATH
  ./stog.sh $SVN_PATH $GIT_PATH
@@ -93,7 +97,7 @@ if [ -z "$(git branch|grep -ioP '$GIT_BRANCH_DEV$')" ]; then
  git checkout -f $GIT_BRANCH_CURRENT
 fi
 
-ALL_SVN_BRANCHES=$(svn ls $SVN_URL'branches'|tr "\n" "^"|sed ':a;N;$!ba;s/\r//g')
+ALL_SVN_BRANCHES=$(svn ls $SVN_URL'branches'|tr "\n" "^"| sed ':a;N;$!ba;s/\r//g')
 
 
 for SVN_BRANCH in $(echo $ALL_SVN_BRANCHES| tr "^" "\n" | grep -ioP '^(\d+\.*)+(?=\/$)' )
