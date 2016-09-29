@@ -112,7 +112,6 @@ echo $GIT_BRANCH
 
 rm -f $DIFF_IGNORE
 
-
 SUBSYSTEMS="dtko tech-state indices"
 WEBSUBSYSTEMS="dtko tech-state tariff rate-consumtion information-discovery"
 RESTSUBSYSTEMS="dtko tech-state rate-consumption tariff"
